@@ -41,7 +41,7 @@ def build_features(logs: list[dict]) -> list[dict]:
     """
     Add a 'features' key to each log dict containing a numeric feature vector.
 
-    Feature vector layout (index → meaning):
+    Feature vector layout (index -> meaning):
         0 — log level      : int 0–4 (DEBUG … CRITICAL/FATAL)
         1 — cluster freq   : int, how many times this cluster_id appears in the batch
         2 — hour of day    : int 0–23, or -1 when no timestamp is found
@@ -63,8 +63,12 @@ def build_features(logs: list[dict]) -> list[dict]:
         cid = log.get("cluster_id", -1)
         raw = log.get("raw", "")
         template = log.get("template", raw)
+        
+        level = extract_level(raw)
+        log["log_level"] = level
+        
         log["features"] = [
-            extract_level(raw),
+            level,
             cluster_counts[cid],
             extract_hour(raw),
             len(template.split()),

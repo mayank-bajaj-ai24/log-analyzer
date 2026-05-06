@@ -72,15 +72,15 @@ These are all in `.gitignore` already.
 
 | Module | File | Owner |
 |--------|------|-------|
-| Streaming Ingestion | `pipeline/ingestion.py` | Riya |
-| Log Parsing | `pipeline/parser.py` | Chinmayi |
-| Deduplication | `pipeline/deduplication.py` | Chinmayi |
-| Feature Extraction | `pipeline/feature_extraction.py` | Roshan |
-| Anomaly Detection | `pipeline/anomaly_detector.py` | Roshan |
-| Storage | `pipeline/storage.py` | Mayank |
-| Dashboard | `dashboard/` | Mayank |
-| Evaluation / Benchmarking | `evaluation/` | Riya |
-| Tests | `tests/` | Everyone (write tests for your own module) |
+| Streaming Ingestion | `backend/pipeline/ingestion.py` | Riya |
+| Log Parsing | `backend/pipeline/parser.py` | Chinmayi |
+| Deduplication | `backend/pipeline/deduplication.py` | Chinmayi |
+| Feature Extraction | `backend/pipeline/feature_extraction.py` | Roshan |
+| Anomaly Detection | `backend/pipeline/anomaly_detector.py` | Roshan |
+| Storage | `backend/pipeline/storage.py` | Mayank |
+| Dashboard | `frontend/` | Mayank |
+| Evaluation / Benchmarking | `backend/evaluation/` | Riya |
+| Tests | `backend/tests/` | Everyone (write tests for your own module) |
 
 ---
 

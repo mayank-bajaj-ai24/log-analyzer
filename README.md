@@ -1,412 +1,309 @@
-# Memory Efficient Log File Analyzer Using Minimal RAM For Sustainable IT
- 
+# 🔍 Memory-Efficient Log File Analyzer
+
 > **RV College of Engineering — Experiential Learning Project 2024-25**
 > Team 57 · Theme: SDG
- 
+
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red.svg)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
- 
+
 ---
- 
-## Table of Contents
-- [Project Overview](#project-overview)
-- [Problem Statement](#problem-statement)
-- [How It Works — Pipeline Explained](#how-it-works--pipeline-explained)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Running the Pipeline](#running-the-pipeline)
-- [Running the Dashboard](#running-the-dashboard)
-- [Running Tests](#running-tests)
-- [Running the Benchmark](#running-the-benchmark)
-- [Datasets](#datasets)
-- [Evaluation Metrics](#evaluation-metrics)
-- [SDG Alignment](#sdg-alignment)
+
+## 📌 What Is This?
+
+Modern systems generate **massive log files** (GB–TB/day) that are critical for monitoring, debugging, and security. Industry tools like **ELK Stack** and **Splunk** require **10–20 GB RAM** and costly cloud infrastructure.
+
+This project is a **lightweight, memory-efficient alternative** that processes large-scale logs using **< 200 MB RAM** — no GPU, no cloud, no labeled data needed. Built for student laptops, small businesses, and IoT edge devices.
+
+### Key Results
+
+| Metric | Our Tool | ELK Stack | Splunk |
+|--------|----------|-----------|--------|
+| **RAM Required** | < 200 MB | 10–20 GB | 8–16 GB |
+| **GPU Needed** | ❌ No | Optional | Optional |
+| **Cloud Setup** | ❌ Not needed | ✅ Required | ✅ Required |
+| **Cost** | Free | Free (self-hosted) | $$$ License |
+| **Dedup Reduction** | 60–90% | — | — |
+| **Compression** | 5–10× (Parquet) | — | — |
+
 ---
- 
-## Project Overview
- 
-Modern computing systems — web servers, cloud platforms, IoT devices — generate log data continuously, often reaching GB to TB scale per day. These logs are essential for monitoring system health, detecting failures, and identifying security anomalies.
- 
-However, existing tools like **ELK Stack** and **Splunk** require 10–20 GB of RAM and significant infrastructure investment, making them completely impractical for student laptops, small enterprises, and edge devices.
- 
-This project proposes a **Memory-Efficient Log File Analyzer** that processes large-scale log files using minimal RAM. By combining streaming techniques, structured parsing, deduplication, and lightweight machine learning, the system can analyze GB-scale logs on a machine with less than 512 MB of available RAM — without sacrificing accuracy or performance.
- 
-**Team:**
- 
-| # | USN | Name |
-|---|-----|------|
-| 1 | 1RV24CS230 | Riya Aggarwal |
-| 2 | 1RV24CS069 | Chinmayi Siddapur |
-| 3 | 1RV24CS235 | Roshan George |
-| 4 | 1RV24CI066 | Mayank Bajaj |
- 
-**Mentors:**
-- Dr. Anitha Sandeep, Assistant Professor, CS Dept
-- Prof. Manasa M, Assistant Professor, AIML Dept
+
+## 👥 Team
+
+| # | USN | Name | Modules |
+|---|-----|------|---------|
+| 1 | 1RV24CS230 | Riya Aggarwal | `ingestion.py`, `test_ingestion.py` |
+| 2 | 1RV24CS069 | Chinmayi Siddapur | `parser.py`, `deduplication.py`, `test_parser.py`, `test_dedup.py` |
+| 3 | 1RV24CS235 | Roshan George | `feature_extraction.py`, `anomaly_detector.py`, `test_anomaly.py` |
+| 4 | 1RV24CI066 | Mayank Bajaj | `storage.py`, `main.py`, `test_storage.py`, Frontend Dashboard |
+
+**Mentors:** Dr. Anitha Sandeep (CS Dept) · Prof. Manasa M (AIML Dept)
+
 ---
- 
-## Problem Statement
- 
-Log analysis is a critical part of maintaining any computing system, but it comes with a significant resource cost:
- 
-- Industry-standard tools require **high memory and expensive infrastructure**, ruling them out for resource-constrained environments.
-- Most research solutions focus on **individual tasks** (just parsing, or just anomaly detection) rather than a complete end-to-end pipeline.
-- There is a clear gap where users on **low-resource systems** — student laptops, SME servers, IoT edge devices — cannot perform full log analysis efficiently.
-This project addresses that gap by designing a complete, memory-efficient pipeline capable of handling large-scale logs without expensive hardware.
- 
----
- 
-## How It Works — Pipeline Explained
- 
-The system is built as a **5-stage sequential pipeline**. Each stage performs a specific transformation on the data, passing only what is needed to the next stage. At no point is the entire log file loaded into memory.
- 
----
- 
-### Stage 1 — Streaming Ingestion
- 
-**File:** `pipeline/ingestion.py`
- 
-The first challenge with large log files is simply reading them without running out of memory. Traditional approaches load the entire file at once — this is what makes tools like ELK Stack so memory-hungry.
- 
-Our solution uses a **Python generator** that reads the file line by line and yields small chunks (e.g., 500 lines at a time) to the rest of the pipeline. Once a chunk is processed, it is released from memory via garbage collection. This means **memory usage stays constant** regardless of how large the input file is.
- 
-`psutil` and `tracemalloc` are used throughout to monitor and report actual RAM usage in real time.
- 
----
- 
-### Stage 2 — Log Parsing with Drain3
- 
-**File:** `pipeline/parser.py`
- 
-Raw log lines are unstructured text — each one looks slightly different even if they represent the same type of event. For example:
- 
+
+## 🏗️ Project Structure
+
 ```
-INFO  Connected to database at 192.168.1.10
-INFO  Connected to database at 10.0.0.5
-INFO  Connected to database at 172.16.0.3
+log-analyzer/
+│
+├── backend/                        # Pipeline & processing
+│   ├── main.py                     # CLI entry point — runs full pipeline
+│   ├── requirements.txt            # Python dependencies
+│   ├── setup.cfg                   # Pytest configuration
+│   ├── pipeline/                   # 5-stage processing pipeline
+│   │   ├── ingestion.py            # Stage 1 — streaming line-by-line reader
+│   │   ├── parser.py               # Stage 2 — Drain3 log parsing
+│   │   ├── deduplication.py        # Stage 3 — MinHash + LSH deduplication
+│   │   ├── feature_extraction.py   # Stage 4a — numerical feature vectors
+│   │   ├── anomaly_detector.py     # Stage 4b — Isolation Forest scoring
+│   │   ├── storage.py              # Stage 5 — PyArrow Parquet write/read
+│   │   └── metrics.py              # Memory profiling utilities
+│   ├── tests/                      # Unit tests for each module
+│   │   ├── test_ingestion.py
+│   │   ├── test_parser.py
+│   │   ├── test_dedup.py
+│   │   ├── test_anomaly.py
+│   │   └── test_storage.py         # 19 tests including 10-dict roundtrip
+│   ├── configs/
+│   │   └── drain3.ini              # Drain3 config (depth, similarity)
+│   ├── data/
+│   │   ├── samples/sample.log      # 20-line sample for quick testing
+│   │   └── processed/              # Parquet outputs after pipeline run
+│   └── evaluation/
+│       ├── benchmark.py            # Pipeline vs baseline comparison
+│       └── metrics.py              # RAM tracker, F1 score, compression
+│
+├── frontend/                       # Streamlit Dashboard
+│   ├── app.py                      # Entry point — Overview page
+│   └── pages/
+│       ├── 1_anomalies.py          # Anomaly detection results
+│       ├── 2_performance.py        # RAM, compression, tool comparison
+│       └── 3_explore.py            # Searchable/filterable log table
+│
+├── requirements.txt                # Root-level dependencies
+├── README.md
+├── CONTRIBUTING.md
+└── .gitignore
 ```
- 
-These three lines are logically identical but textually different. Downstream analysis would treat them as three separate events.
- 
-**Drain3** solves this by parsing each log line through a fixed-depth parse tree, extracting a generalised **template** and replacing variable parts with placeholders:
- 
-```
-INFO  Connected to database at <IP>
-```
- 
-Every log entry is assigned a **cluster ID** based on its template. This dramatically reduces the variety of data that needs to be stored and analysed. Drain3 is specifically designed to work in a streaming context, making it ideal for our pipeline.
- 
+
 ---
- 
-### Stage 3 — Deduplication with SimHash / MinHash
- 
-**File:** `pipeline/deduplication.py`
- 
-Even after parsing, log data contains massive amounts of redundancy. A single event (like a heartbeat or a routine info message) can appear thousands of times with only minor variations.
- 
-We use **MinHash with Locality Sensitive Hashing (LSH)** from the `datasketch` library to efficiently detect near-duplicate log templates. Instead of comparing every pair of entries (which would be O(n²)), LSH groups similar entries into the same hash bucket, making deduplication extremely fast even on large datasets.
- 
-Duplicate entries are either removed or aggregated with a frequency count. This stage can reduce the number of stored entries by 60–90% on typical server logs.
- 
----
- 
-### Stage 4 — Feature Extraction and Anomaly Detection
- 
-**Files:** `pipeline/feature_extraction.py`, `pipeline/anomaly_detector.py`
- 
-With parsed and deduplicated logs, we now need to identify which entries represent abnormal system behaviour.
- 
-**Feature Extraction** converts each structured log entry into a numerical vector based on:
-- Log level (DEBUG=0, INFO=1, WARN=2, ERROR=3, CRITICAL=4)
-- Cluster frequency (how often this template appeared)
-- Hour of day (extracted from timestamp)
-- Template length (a proxy for message complexity)
-**Isolation Forest** (from scikit-learn) is then trained on these feature vectors. Isolation Forest works by randomly partitioning the feature space — anomalous entries are isolated more quickly than normal ones, resulting in a lower anomaly score. Crucially, it requires **no labelled training data**, making it practical for real-world log files where anomalies are not pre-tagged.
- 
-Each log entry is assigned an anomaly score and a boolean `is_anomaly` flag.
- 
----
- 
-### Stage 5 — Compressed Storage and Visualisation
- 
-**Files:** `pipeline/storage.py`, `dashboard/`
- 
-Processed results are saved in **Parquet format** using PyArrow. Parquet is a columnar storage format that compresses log data far more efficiently than plain text — typically achieving 5–10× compression. It also supports fast column-level queries, meaning the dashboard can load only the columns it needs rather than the entire file.
- 
-The **Streamlit dashboard** provides three interactive views:
-- **Overview** — log volume, level distribution, most frequent templates
-- **Anomalies** — flagged entries with their anomaly scores, filterable and searchable
-- **Performance** — RAM usage, processing time, and compression ratio compared to the naive baseline
----
- 
-## Architecture
- 
+
+## 🔧 How It Works — 5-Stage Pipeline
+
 ```
 Raw Log File (GB scale)
         │
         ▼
 ┌─────────────────────────────────────────┐
 │ Stage 1 — Streaming Ingestion           │
-│ pipeline/ingestion.py                   │
-│                                         │
-│ • Line-by-line generator (no full load) │
-│ • Constant RAM regardless of file size  │
-│ • psutil + tracemalloc memory monitor   │
+│ Reads 500 lines at a time via generator │
+│ RAM stays constant regardless of size   │
 └────────────────────┬────────────────────┘
-                     │
+                     │  (chunk by chunk)
                      ▼
 ┌─────────────────────────────────────────┐
-│ Stage 2 — Log Parsing (Drain3)          │
-│ pipeline/parser.py                      │
-│                                         │
-│ • Fixed-depth parse tree                │
-│ • Extracts log templates + cluster IDs  │
-│ • Variable parts replaced with <tokens> │
+│ Stage 2 — Drain3 Log Parsing            │
+│ Raw text → structured templates         │
+│ "Connected to 10.0.0.5" → "... <IP>"   │
 └────────────────────┬────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────┐
 │ Stage 3 — Deduplication (MinHash + LSH) │
-│ pipeline/deduplication.py               │
-│                                         │
-│ • MinHash signatures per template       │
-│ • LSH finds near-duplicates efficiently │
-│ • 60–90% entry reduction typical        │
+│ Removes 60–90% near-duplicate entries   │
+│ Only unique patterns survive            │
+└────────────────────┬────────────────────┘
+                     │  (deduplicated set)
+                     ▼
+┌─────────────────────────────────────────┐
+│ Stage 4 — Feature Extraction +          │
+│           Isolation Forest              │
+│ Anomaly score + is_anomaly flag         │
+│ No labels, no GPU needed               │
 └────────────────────┬────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────┐
-│ Stage 4 — Anomaly Detection             │
-│ pipeline/feature_extraction.py          │
-│ pipeline/anomaly_detector.py            │
-│                                         │
-│ • Numerical feature vectors per entry   │
-│ • Isolation Forest (no labels needed)   │
-│ • Anomaly score + is_anomaly flag       │
-└────────────────────┬────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────┐
-│ Stage 5 — Storage + Visualisation       │
-│ pipeline/storage.py + dashboard/        │
-│                                         │
-│ • Parquet columnar compression (5–10×)  │
-│ • Streamlit + Plotly dashboard          │
-│ • Overview, Anomalies, Performance tabs │
+│ Stage 5 — Parquet Storage               │
+│ 5–10× compression with Snappy          │
+│ Columnar format for fast queries        │
 └─────────────────────────────────────────┘
 ```
- 
+
+**Memory strategy:** Stages 1→2→3 run per-chunk in a streaming loop. Only deduplicated entries accumulate in RAM (60–90% smaller than raw input). Stage 4 runs on the reduced set.
+
 ---
- 
-## Project Structure
- 
-```
-log-analyzer/
-│
-├── data/
-│   ├── raw/                  # Original log files — not committed to git
-│   ├── processed/            # Parquet outputs after pipeline run
-│   └── samples/              # Small sample file for quick testing
-│
-├── pipeline/
-│   ├── ingestion.py          # Stage 1 — generator-based streaming reader
-│   ├── parser.py             # Stage 2 — Drain3 log parsing
-│   ├── deduplication.py      # Stage 3 — SimHash / MinHash + LSH
-│   ├── feature_extraction.py # Stage 4a — numerical feature vectors
-│   ├── anomaly_detector.py   # Stage 4b — Isolation Forest scoring
-│   └── storage.py            # Stage 5 — PyArrow Parquet write/read
-│
-├── dashboard/
-│   ├── app.py                # Streamlit entry point
-│   ├── pages/
-│   │   ├── overview.py       # Log volume and level distribution
-│   │   ├── anomalies.py      # Flagged entries and anomaly scores
-│   │   └── performance.py    # RAM, time, compression metrics
-│   └── components/
-│       └── charts.py         # Reusable Plotly figure builders
-│
-├── evaluation/
-│   ├── benchmark.py          # Pipeline vs baseline RAM/time comparison
-│   ├── metrics.py            # RAM tracker, F1 score, compression ratio
-│   └── reports/              # Generated benchmark reports (CSV)
-│
-├── tests/
-│   ├── test_ingestion.py
-│   ├── test_parser.py
-│   ├── test_dedup.py
-│   └── test_anomaly.py
-│
-├── configs/
-│   └── drain3.ini            # Drain3 config (depth, similarity threshold)
-│
-├── notebooks/
-│   ├── EDA.ipynb             # Dataset exploration
-│   └── model_tuning.ipynb    # Isolation Forest hyperparameter search
-│
-├── .gitignore
-├── requirements.txt
-├── main.py                   # CLI entry point — runs full pipeline
-└── README.md
-```
- 
----
- 
-## Tech Stack
- 
-| Layer | Tool | Why We Chose It |
-|-------|------|-----------------|
-| Language | Python 3.10+ | Native generator support for memory-efficient streaming |
-| Log Parsing | `drain3` | Designed for streaming; fixed-depth tree keeps memory bounded |
-| Deduplication | `datasketch` | Probabilistic MinHash + LSH — sub-linear time and memory |
-| ML / Anomaly | `scikit-learn` Isolation Forest | No labels required; lightweight; works on CPU only |
-| Storage | `pyarrow` + Parquet | Columnar compression; 5–10× smaller than raw text |
-| Dashboard | `streamlit` + `plotly` | Rapid interactive UI with no frontend code required |
-| Memory profiling | `psutil`, `memory_profiler`, `tracemalloc` | Accurate per-stage RAM measurement |
-| Data handling | `pandas` (chunked mode) | Prevents full file loads during analysis |
-| Testing | `pytest` | Simple unit tests per pipeline module |
- 
----
- 
-## Getting Started
- 
-### 1. Clone the repo
- 
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/chinn0329/log-analyzer.git
 cd log-analyzer
 ```
- 
-### 2. Create a virtual environment
- 
+
+### 2. Create a Virtual Environment (recommended)
+
 ```bash
 python -m venv venv
- 
-# On Windows
+
+# Windows
 venv\Scripts\activate
- 
-# On Mac/Linux
+
+# Mac/Linux
 source venv/bin/activate
 ```
- 
-### 3. Install dependencies
- 
+
+### 3. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
- 
-### 4. Verify installation
- 
-```bash
-pip list
-```
- 
-All of the following should appear: `drain3`, `datasketch`, `scikit-learn`, `pyarrow`, `streamlit`, `plotly`, `psutil`, `memory-profiler`, `pytest`.
- 
+
+**Required packages:** `drain3`, `datasketch`, `scikit-learn`, `pyarrow`, `pandas`, `streamlit`, `plotly`, `psutil`, `memory-profiler`, `pytest`, `numpy`
+
 ---
- 
-## Running the Pipeline
- 
+
+## ▶️ Running the Pipeline (Backend)
+
 ```bash
-# Quick test on the included sample
+cd backend
+
+# Quick test on the 20-line sample
+python main.py --input data/samples/sample.log --profile
+
+# Run on a full dataset
+python main.py --input data/raw/BGL.log --output data/processed/ --profile
+
+# Without memory profiling
 python main.py --input data/samples/sample.log
- 
-# Run on a full dataset with output directory specified
-python main.py --input data/raw/BGL.log --output data/processed/
- 
-# Run with memory profiling to see peak RAM usage
-python main.py --input data/raw/BGL.log --profile
 ```
- 
-Processed output is saved as a Parquet file in `data/processed/`.
- 
----
- 
-## Running the Dashboard
- 
-```bash
-streamlit run dashboard/app.py
+
+> **Windows Users:** This project is fully compatible with Windows. All Unicode characters have been optimized for standard CMD/PowerShell environments to prevent encoding errors.
+> ```powershell
+> # Optional: Ensure UTF-8 output in your terminal
+> $env:PYTHONIOENCODING="utf-8"
+> ```
+
+### Expected Output
+
 ```
- 
-Open `http://localhost:8501` in your browser. Upload the Parquet file generated by the pipeline to explore results interactively.
- 
+============================================================
+  Log Analyzer — Run Complete
+============================================================
+  Input file      :  data/samples/sample.log
+  Lines ingested  :  20
+  After parsing   :  20 templates extracted
+  After dedup     :  16 unique entries
+  Dedup reduction :  20.0%
+  Anomalies found :  1  (6.2%)
+  Output saved    :  data/processed/output.parquet
+  Peak RAM        :  80.6 MB
+  Total time      :  3.50s
+============================================================
+```
+
 ---
- 
-## Running Tests
- 
+
+## 📊 Running the Dashboard (Frontend)
+
 ```bash
+# From the project root
+streamlit run frontend/app.py
+```
+
+Open **http://localhost:8501** in your browser. The dashboard has 4 pages:
+
+| Page | What It Shows |
+|------|---------------|
+| **📊 Overview** | Metric cards, log level donut chart, top templates bar chart, anomaly distribution |
+| **🚨 Anomalies** | Anomaly table (sorted by score), score histogram, severity breakdown |
+| **⚡ Performance** | RAM gauge, compression ratio, dedup impact, tool comparison vs ELK/Splunk |
+| **🔎 Explore** | Searchable + filterable table of all log entries |
+
+The dashboard auto-loads `backend/data/processed/output.parquet` if available, or you can upload any `.parquet` file via the sidebar.
+
+---
+
+## 🧪 Running Tests
+
+```bash
+cd backend
+
 # Run all tests
-pytest tests/
- 
-# Run a specific test file
-pytest tests/test_ingestion.py -v
- 
-# Run with coverage report
-pytest tests/ --cov=pipeline
+python -m pytest tests/ -v
+
+# Run only storage tests (Mayank's module)
+python -m pytest tests/test_storage.py -v
+
+# Run with coverage
+python -m pytest tests/ --cov=pipeline
 ```
- 
+
+### Test Summary
+
+| Module | Test File | Tests |
+|--------|-----------|-------|
+| `ingestion.py` | `test_ingestion.py` | Streaming, chunk sizes, memory |
+| `parser.py` | `test_parser.py` | Template extraction, cluster IDs |
+| `deduplication.py` | `test_dedup.py` | MinHash, LSH, duplicate removal |
+| `anomaly_detector.py` | `test_anomaly.py` | Isolation Forest, scoring |
+| `storage.py` | `test_storage.py` | **19 tests** — roundtrip, compression, edge cases |
+
 ---
- 
-## Running the Benchmark
- 
-Compares the streaming pipeline against a naive baseline that loads the entire file into memory at once:
- 
+
+## 📈 Running the Benchmark
+
 ```bash
+cd backend
 python evaluation/benchmark.py --dataset data/samples/sample.log
 ```
- 
-Results are printed to the terminal and saved to `evaluation/reports/benchmark_results.csv`.
- 
+
+Compares streaming pipeline vs. naive baseline (load entire file into memory).
+
 ---
- 
-## Datasets
- 
-We use publicly available datasets from the [LogHub](https://github.com/logpai/loghub) benchmark collection, widely used in log analysis research.
- 
-| Dataset | Size | Description | Best For |
-|---------|------|-------------|----------|
-| HDFS | ~1.5 GB | Hadoop distributed system logs | High volume streaming tests |
-| BGL | ~700 MB | BlueGene/L supercomputer logs | Anomaly detection — has ground truth labels |
-| OpenStack | ~500 MB | Cloud platform logs | Template parsing tests |
-| Apache | ~50 MB | Web server access logs | Quick dev and testing |
-| Windows | ~26 MB | Windows event logs | Deduplication tests |
- 
-> Raw log files are excluded from git via `.gitignore`. Download from [LogHub](https://github.com/logpai/loghub) and place in `data/raw/`.
- 
-> **Start with BGL** — it has ground-truth anomaly labels, allowing real F1 score computation rather than qualitative evaluation.
- 
+
+## 📦 Datasets
+
+We use publicly available datasets from [LogHub](https://github.com/logpai/loghub):
+
+| Dataset | Size | Best For |
+|---------|------|----------|
+| **BGL** | ~700 MB | Anomaly detection (has ground-truth labels) |
+| **HDFS** | ~1.5 GB | High-volume streaming tests |
+| **OpenStack** | ~500 MB | Template parsing tests |
+| **Apache** | ~50 MB | Quick dev and testing |
+
+> Download from [LogHub](https://github.com/logpai/loghub) and place in `backend/data/raw/`.
+
 ---
- 
-## Evaluation Metrics
- 
-| Metric | What It Measures | Target |
-|--------|-----------------|--------|
-| Peak RAM (MB) | Maximum memory used during pipeline execution | < 512 MB on a 1 GB log file |
-| Processing time (s) | End-to-end wall-clock time for the full pipeline | Faster than or competitive with ELK |
-| Compression ratio | Raw log size ÷ Parquet output size | > 5× |
-| Anomaly F1 score | Precision and recall of anomaly detection on BGL labels | > 0.80 |
-| Dedup reduction % | Percentage of entries removed as near-duplicates | Measured per dataset |
- 
+
+## 🛠️ Tech Stack
+
+| Layer | Tool | Why |
+|-------|------|-----|
+| Language | Python 3.10+ | Native generator support for streaming |
+| Parsing | `drain3` | Fixed-depth tree, streaming-compatible |
+| Deduplication | `datasketch` | MinHash + LSH — sub-linear time |
+| Anomaly Detection | `scikit-learn` Isolation Forest | No labels, CPU-only, lightweight |
+| Storage | `pyarrow` + Parquet | Columnar compression, 5–10× smaller |
+| Dashboard | `streamlit` + `plotly` | Interactive dark-mode dashboard |
+| Profiling | `psutil`, `tracemalloc` | Real-time RAM measurement |
+| Testing | `pytest` | Unit tests per pipeline module |
+
 ---
- 
-## SDG Alignment
- 
-This project directly contributes to three UN Sustainable Development Goals:
- 
-**SDG 9 — Industry, Innovation and Infrastructure**
-By making log analytics accessible on low-cost hardware, the system enables small and medium enterprises, educational institutions, and IoT deployments to monitor their systems without expensive cloud infrastructure.
- 
-**SDG 12 — Responsible Consumption and Production**
-The pipeline reduces computational overhead, storage consumption, and energy usage compared to traditional tools. Processing the same data with less hardware means less energy consumed per analysis.
- 
-**SDG 13 — Climate Action**
-Reduced energy consumption in IT infrastructure directly contributes to lower carbon emissions. Lightweight, efficient software is a practical contribution to green computing.
- 
+
+## 🌍 SDG Alignment
+
+| SDG | Contribution |
+|-----|-------------|
+| **SDG 9 — Industry & Infrastructure** | Makes log analytics accessible on low-cost hardware (students, SMEs, IoT) |
+| **SDG 12 — Responsible Consumption** | Reduces storage, compute, and energy vs. traditional tools |
+| **SDG 13 — Climate Action** | Less energy = lower carbon emissions = green computing |
+
 ---
- 
-## License
- 
+
+## 📜 License
+
 MIT License — see [LICENSE](LICENSE) for details.
- 

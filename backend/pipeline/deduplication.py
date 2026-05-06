@@ -76,5 +76,5 @@ def deduplicate_chunk(
             unique.append(log)
 
     after = len(unique)
-    print(f"[DEDUP]  {before} → {after} unique entries  ({before - after} removed)")
+    print(f"[DEDUP]  {before} -> {after} unique entries  ({before - after} removed)")
     return unique

@@ -61,6 +61,6 @@ def parse_chunk(miner: TemplateMiner, chunk: list[str]) -> list[dict]:
     parsed = [parse_line(miner, line) for line in chunk]
 
     unique_templates = len(set(r["template"] for r in parsed))
-    print(f"[PARSER] {len(chunk)} lines → {unique_templates} unique templates")
+    print(f"[PARSER] {len(chunk)} lines -> {unique_templates} unique templates")
 
     return parsed

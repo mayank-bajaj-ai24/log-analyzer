@@ -45,7 +45,7 @@ def score_logs(model: IsolationForest, logs: list[dict]) -> list[dict]:
     Assign anomaly scores and labels to each log entry.
 
     Adds two keys in-place to every dict:
-        'anomaly_score' (float) — higher means more normal; negative → suspicious.
+        'anomaly_score' (float) — higher means more normal; negative -> suspicious.
         'is_anomaly'    (bool)  — True when Isolation Forest predicts -1.
 
     Args:
