@@ -3,16 +3,24 @@ __pycache__/
 *.pyc
 *.pyo
 .env
-
-data/raw/
-data/processed/
-*.log
-*.parquet
-
 .DS_Store
 .idea/
 .vscode/
+.pytest_cache/
+.coverage
+htmlcov/
+.streamlit/*
+!.streamlit/config.toml
 
+# Data files (keep samples, ignore real data)
+backend/data/raw/*
+backend/data/processed/*
+!backend/data/samples/
+*.log
+*.parquet
+
+# Specific tools
 notebooks/.ipynb_checkpoints/
 evaluation/reports/*.csv
 evaluation/reports/*.html
+

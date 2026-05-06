@@ -53,19 +53,19 @@ def test_different_texts_have_lower_jaccard():
 # --- deduplicate_chunk tests ---
 
 def test_identical_template_logs_deduplicated():
-    """Three lines with same template → only 1 should survive."""
+    """Three lines with same template -> only 1 should survive."""
     lsh = build_lsh(threshold=0.8)
     unique = deduplicate_chunk(lsh, IDENTICAL_TEMPLATE_LOGS)
     assert len(unique) == 1
 
 def test_all_unique_logs_are_kept():
-    """Three completely different templates → all 3 should survive."""
+    """Three completely different templates -> all 3 should survive."""
     lsh = build_lsh(threshold=0.8)
     unique = deduplicate_chunk(lsh, UNIQUE_LOGS)
     assert len(unique) == 3
 
 def test_mixed_logs_correct_count():
-    """3 duplicates + 2 unique → should keep 3 total."""
+    """3 duplicates + 2 unique -> should keep 3 total."""
     lsh = build_lsh(threshold=0.8)
     unique = deduplicate_chunk(lsh, MIXED_LOGS)
     assert len(unique) == 3
@@ -109,7 +109,7 @@ def test_lsh_persists_across_two_calls():
     )
 
 def test_stricter_threshold_keeps_more():
-    """threshold=0.95 is strict → fewer entries removed than threshold=0.5."""
+    """threshold=0.95 is strict -> fewer entries removed than threshold=0.5."""
     lsh_strict = build_lsh(threshold=0.95)
     unique_strict = deduplicate_chunk(lsh_strict, IDENTICAL_TEMPLATE_LOGS)
 
