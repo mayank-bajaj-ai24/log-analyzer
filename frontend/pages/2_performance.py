@@ -26,7 +26,14 @@ cr=O.get("compression_ratio",1); dp=O.get("dedup_reduction_pct",10)
 rm=O.get("raw_size_mb",0.001); pm=O.get("parquet_size_mb",0.001)
 
 # RAM chart bars
-ram_data = [("Log Analyzer",pr/1024,"#0D4F4F"),("ELK Stack",16,"#DC2626"),("Splunk",12,"#D97706")]
+ELK_RAM_GB = 8      # Elastic official minimum: https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-configuration-memory.html
+SPLUNK_RAM_GB = 12  # Splunk sizing guide minimum: https://docs.splunk.com/Documentation/Splunk/latest/Capacity/Referencehardware
+
+ram_data = [
+    ("Log Analyzer", pr / 1024, "#0D4F4F"),   # actual measured value from this run
+    ("ELK Stack",    ELK_RAM_GB, "#DC2626"),   # official documented minimum
+    ("Splunk",       SPLUNK_RAM_GB, "#D97706"), # official documented minimum
+]
 mx_ram = 16
 ram_bars = ""
 for name,val,clr in ram_data:
@@ -77,6 +84,7 @@ td{{padding:10px 16px;border-bottom:1px solid #eee;font-size:13px;color:#374151}
         <div style="background:#D1FAE5;border-radius:4px;padding:10px;text-align:center;margin-top:12px">
             <span style="color:#065F46;font-size:12px;font-weight:700">✅ Our tool uses {pr/1024/16*100:.1f}% of ELK Stack RAM</span>
         </div>
+        <div style="font-size:10px;color:#888;text-align:center;margin-top:6px">ELK/Splunk values are official vendor-documented minimums. Log Analyzer value is measured from this run.</div>
     </div>
     <div class="card" style="flex:1">
         <div class="card-title">📦 Storage Compression</div>
