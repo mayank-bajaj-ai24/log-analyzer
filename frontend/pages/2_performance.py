@@ -89,6 +89,7 @@ td{{padding:16px; border-bottom:1px solid #F1F5F9; font-size:13px; color:#334155
             <span class="material-icons" style="color: #10B981;">check_circle</span>
             <span style="color:#065F46; font-size:13px; font-weight:600;">Hardware overhead reduced by 98% compared to industry standard.</span>
         </div>
+        <div style="font-size:10px;color:#888;text-align:center;margin-top:6px">ELK/Splunk values are official vendor-documented minimums. Log Analyzer value is measured from this run.</div>
     </div>
     <div class="card" style="flex:1;">
         <div class="section-title"><span class="material-icons" style="color: #F59E0B;">storage</span> Data Density</div>
