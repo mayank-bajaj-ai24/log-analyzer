@@ -1,28 +1,31 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
+from components.ui_utils import apply_custom_styles, render_sidebar
 
-st.set_page_config(page_title="Explore | Log Analyzer", page_icon="🔍", layout="wide")
+st.set_page_config(page_title="Explore | Log Analyzer", layout="wide")
+apply_custom_styles()
+render_sidebar("explore")
+
 LEVEL_NAMES = {0:"DEBUG",1:"INFO",2:"WARNING",3:"ERROR",4:"CRITICAL"}
-LEVEL_COLORS = {"DEBUG":"#6B7280","INFO":"#0D4F4F","WARNING":"#92642a","ERROR":"#DC2626","CRITICAL":"#991B1B"}
-LEVEL_BG = {"DEBUG":"#F3F4F6","INFO":"#CCFBF1","WARNING":"#FEF3C7","ERROR":"#FEE2E2","CRITICAL":"#FEE2E2"}
+LEVEL_COLORS = {"DEBUG":"#94A3B8","INFO":"#10B981","WARNING":"#F59E0B","ERROR":"#EF4444","CRITICAL":"#7F1D1D"}
+LEVEL_BG = {"DEBUG":"#F1F5F9","INFO":"#ECFDF5","WARNING":"#FFFBEB","ERROR":"#FEF2F2","CRITICAL":"#FEF2F2"}
 
-st.markdown("""<style>
-section[data-testid="stSidebar"]{background:linear-gradient(180deg,#0B3D3D,#0D4F4F)!important}
-section[data-testid="stSidebar"] *{color:#E0F2F1!important}
-section[data-testid="stSidebarNav"]{display:none!important}
-.stApp{background:#F0F2F5}
-#MainMenu,footer,header{visibility:hidden}
-iframe{border:none!important}
-</style>""", unsafe_allow_html=True)
-
-with st.sidebar:
-    st.markdown("### 🟢 Log Analyzer"); st.caption("Enterprise Infrastructure"); st.divider()
-    st.page_link("app.py", label="📊 Overview"); st.page_link("pages/1_anomalies.py", label="⚠️ Anomalies")
-    st.page_link("pages/2_performance.py", label="⚡ Performance"); st.page_link("pages/3_explore.py", label="🔍 Explore")
+# Sidebar handled by ui_utils
 
 if "df" not in st.session_state:
-    st.warning("Go to **Overview** and upload a log file first."); st.stop()
+    st.markdown("""
+    <div style="display:flex; justify-content:center; align-items:center; height:60vh;">
+        <div style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); border-radius: 24px; padding: 60px; text-align: center; max-width: 600px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);">
+            <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 30px auto;">
+                <span class="material-icons" style="font-size: 40px; color: #10B981;">manage_search</span>
+            </div>
+            <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: white; margin-bottom: 16px;">Log Explorer Offline</h2>
+            <p style="font-family: 'Inter', sans-serif; font-size: 16px; color: #94A3B8; line-height: 1.6;">Awaiting data stream. Please return to the Dashboard Overview and upload a log file to initialize data exploration.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.stop()
 
 df = st.session_state["df"].copy()
 if "log_level" in df.columns:
@@ -76,21 +79,28 @@ if first is not None:
     d_tpl = d_tpl.replace("&lt;*&gt;","<span style='background:#CCFBF1;color:#0D4F4F;padding:1px 5px;border-radius:3px;font-weight:700'>&lt;*&gt;</span>")
     d_cl = first.get("cluster_id","N/A")
     detail = f"""
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-            <span style="background:{d_lb};color:{d_lc};padding:4px 12px;border-radius:4px;font-size:10px;font-weight:700">{d_lv}</span>
-            <span style="color:#DC2626;font-size:12px;font-weight:700">⚠ Score: {d_sc:.2f}</span>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+            <span style="background:{d_lb}; color:{d_lc}; padding:6px 16px; border-radius:8px; font-size:11px; font-weight:800; border: 1px solid rgba(0,0,0,0.05);">{d_lv}</span>
+            <div style="height: 20px; width: 1px; background: #E2E8F0;"></div>
+            <span style="color:#EF4444; font-size:13px; font-weight:700;">AI Score: {d_sc:.2f}</span>
         </div>
-        <div style="margin-bottom:16px">
-            <div style="font-family:'Space Grotesk';font-size:9px;color:#888;text-transform:uppercase;font-weight:700;letter-spacing:.8px;margin-bottom:4px">Cluster ID</div>
-            <div style="font-size:18px;font-weight:800;color:#222">{d_cl}</div>
+        
+        <div style="margin-bottom:20px;">
+            <div style="font-size:10px; color:#64748B; text-transform:uppercase; font-weight:700; letter-spacing:0.05em; margin-bottom:8px;">Cluster Context</div>
+            <div style="font-size:16px; font-weight:800; color:#0F172A; display:flex; align-items:center; gap:6px;">
+                <span class="material-icons" style="font-size:18px; color:#6366F1;">group_work</span>
+                Node Cluster #{d_cl}
+            </div>
         </div>
-        <div style="margin-bottom:16px">
-            <div style="font-family:'Space Grotesk';font-size:9px;color:#888;text-transform:uppercase;font-weight:700;letter-spacing:.8px;margin-bottom:4px">Full Raw Log</div>
-            <div style="background:#1E293B;color:#A5F3FC;padding:12px;border-radius:4px;font-family:'Space Grotesk',monospace;font-size:11px;line-height:1.5;word-break:break-all">{d_raw}</div>
+
+        <div style="margin-bottom:20px;">
+            <div style="font-size:10px; color:#64748B; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Trace Payload</div>
+            <div class="code-block">{d_raw}</div>
         </div>
+
         <div>
-            <div style="font-family:'Space Grotesk';font-size:9px;color:#888;text-transform:uppercase;font-weight:700;letter-spacing:.8px;margin-bottom:4px">Parsed Template</div>
-            <div style="background:#F9FAFB;border:1px solid #D1D5DB;padding:12px;border-radius:4px;font-family:'Space Grotesk',monospace;font-size:11px;color:#374151">{d_tpl}</div>
+            <div style="font-size:10px; color:#64748B; text-transform:uppercase; font-weight:700; letter-spacing:0.05em;">Semantic Template</div>
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:16px; border-radius:12px; font-family:'Inter',monospace; font-size:12px; color:#334155; margin-top:12px; line-height:1.6;">{d_tpl}</div>
         </div>"""
 else:
     detail = '<div style="color:#888;text-align:center;padding:40px">No entries match filters</div>'
@@ -98,39 +108,44 @@ else:
 html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}}
-body{{background:#F0F2F5;padding:16px}}
-.card{{background:#fff;border:1px solid #D1D5DB;border-radius:4px;overflow:hidden}}
-table{{width:100%;border-collapse:collapse}}
-th{{text-align:left;font-family:'Space Grotesk';font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#707978;padding:10px 14px;border-bottom:2px solid #D1D5DB;background:#F9FAFB}}
-tr:hover{{background:#f0fffe!important}}
+body{{background:transparent; padding:0; color:#1E293B;}}
+.card{{background:#fff; border: 1px solid #E2E8F0; border-radius:16px; overflow:hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);}}
+.section-title{{font-family:'Space Grotesk'; font-size:14px; font-weight:700; color:#0F172A; text-transform:uppercase; letter-spacing:0.05em; display:flex; align-items:center; gap:8px;}}
+table{{width:100%; border-collapse:collapse;}}
+th{{text-align:left; font-size:11px; font-weight:700; color:#64748B; text-transform:uppercase; padding:16px; border-bottom:2px solid #F1F5F9; background:#F8FAFC;}}
+td{{padding:14px 16px; border-bottom:1px solid #F1F5F9; font-size:13px; color:#334155;}}
+tr:hover{{background:#F0FDF4!important; cursor:pointer;}}
+.detail-panel {{ background: white; border: 1px solid #E2E8F0; border-radius: 16px; padding: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); position: sticky; top: 0; }}
+.code-block {{ background: #0F172A; color: #10B981; padding: 16px; border-radius: 12px; font-family: 'Inter', monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; margin-top: 12px; border: 1px solid #1E293B; }}
 </style></head><body>
 
-<div style="font-size:11px;color:#888;margin-bottom:12px;font-weight:500">{len(filt):,} logs found</div>
+<div style="font-family:'Space Grotesk'; font-size:12px; color:#64748B; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:16px;">{len(filt):,} logs indexed in current view</div>
 
-<div style="display:flex;gap:16px">
+<div style="display:flex; gap:24px; align-items: flex-start;">
     <!-- Table -->
-    <div class="card" style="flex:3">
+    <div class="card" style="flex:3;">
         <table>
-            <thead><tr><th>Message</th><th style="text-align:center">Level</th><th style="text-align:center">Cluster</th><th style="text-align:right">Score</th></tr></thead>
+            <thead><tr><th>Log Message</th><th style="text-align:center;">Level</th><th style="text-align:center;">Cluster</th><th style="text-align:right;">AI Score</th></tr></thead>
             <tbody>{rows}</tbody>
         </table>
-        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#F9FAFB;border-top:1px solid #D1D5DB">
-            <span style="font-size:10px;color:#888">Rows per page: 15</span>
-            <span style="font-size:10px;color:#888">1–{min(15,len(filt))} of {len(filt):,}</span>
+        <div style="padding:16px; background:#F8FAFC; border-top:1px solid #F1F5F9; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:12px; color:#64748B; font-weight:500;">Viewing top 15 results</span>
+            <div style="display:flex; gap:8px;"><span style="background:#0F172A; color:#fff; padding:4px 12px; border-radius:6px; font-size:11px; font-weight:700;">1</span><span style="color:#64748B; padding:4px 12px; font-size:11px; font-weight:600;">2</span><span style="color:#64748B; padding:4px 12px; font-size:11px; font-weight:600;">3</span></div>
         </div>
     </div>
     
     <!-- Detail Panel -->
-    <div style="flex:2;background:#fff;border:1px solid #D1D5DB;border-radius:4px;padding:20px">
-        <div style="font-family:'Space Grotesk';font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#404848;margin-bottom:16px">Log Details</div>
-        {detail}
+    <div style="flex:2;">
+        <div class="detail-panel">
+            <div class="section-title" style="margin-bottom:20px;"><span class="material-icons" style="color: #10B981;">visibility</span> Diagnostic Data</div>
+            {detail}
+        </div>
     </div>
 </div>
 
-
-
 </body></html>"""
 
-components.html(html, height=800, scrolling=True)
+components.html(html, height=900, scrolling=True)

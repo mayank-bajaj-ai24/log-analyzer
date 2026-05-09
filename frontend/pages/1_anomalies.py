@@ -1,28 +1,31 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
+from components.ui_utils import apply_custom_styles, render_sidebar
 
-st.set_page_config(page_title="Anomalies | Log Analyzer", page_icon="⚠️", layout="wide")
+st.set_page_config(page_title="Anomalies | Log Analyzer", layout="wide")
+apply_custom_styles()
+render_sidebar("anomalies")
+
 LEVEL_NAMES = {0:"DEBUG",1:"INFO",2:"WARNING",3:"ERROR",4:"CRITICAL"}
-LEVEL_COLORS = {"DEBUG":"#6B7280","INFO":"#0D4F4F","WARNING":"#92642a","ERROR":"#DC2626","CRITICAL":"#991B1B"}
-LEVEL_BG = {"DEBUG":"#F3F4F6","INFO":"#CCFBF1","WARNING":"#FEF3C7","ERROR":"#FEE2E2","CRITICAL":"#FEE2E2"}
+LEVEL_COLORS = {"DEBUG":"#94A3B8","INFO":"#10B981","WARNING":"#F59E0B","ERROR":"#EF4444","CRITICAL":"#7F1D1D"}
+LEVEL_BG = {"DEBUG":"#F1F5F9","INFO":"#ECFDF5","WARNING":"#FFFBEB","ERROR":"#FEF2F2","CRITICAL":"#FEF2F2"}
 
-st.markdown("""<style>
-section[data-testid="stSidebar"]{background:linear-gradient(180deg,#0B3D3D,#0D4F4F)!important}
-section[data-testid="stSidebar"] *{color:#E0F2F1!important}
-section[data-testid="stSidebarNav"]{display:none!important}
-.stApp{background:#F0F2F5}
-#MainMenu,footer,header{visibility:hidden}
-iframe{border:none!important}
-</style>""", unsafe_allow_html=True)
-
-with st.sidebar:
-    st.markdown("### 🟢 Log Analyzer"); st.caption("Enterprise Infrastructure"); st.divider()
-    st.page_link("app.py", label="📊 Overview"); st.page_link("pages/1_anomalies.py", label="⚠️ Anomalies")
-    st.page_link("pages/2_performance.py", label="⚡ Performance"); st.page_link("pages/3_explore.py", label="🔍 Explore")
+# Sidebar handled by ui_utils
 
 if "df" not in st.session_state:
-    st.warning("Go to **Overview** and upload a log file first."); st.stop()
+    st.markdown("""
+    <div style="display:flex; justify-content:center; align-items:center; height:60vh;">
+        <div style="background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 100%); border-radius: 24px; padding: 60px; text-align: center; max-width: 600px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);">
+            <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 30px auto;">
+                <span class="material-icons" style="font-size: 40px; color: #10B981;">portable_wifi_off</span>
+            </div>
+            <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: white; margin-bottom: 16px;">Anomaly Engine Offline</h2>
+            <p style="font-family: 'Inter', sans-serif; font-size: 16px; color: #94A3B8; line-height: 1.6;">Awaiting data stream. Please return to the Dashboard Overview and upload a log file to initialize threat detection.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.stop()
 
 df = st.session_state["df"]
 anom_df = df[df["is_anomaly"]==True].copy() if "is_anomaly" in df.columns else pd.DataFrame()
@@ -64,81 +67,97 @@ if "anomaly_score" in df.columns:
         hist_normal += f'<rect x="{i*bw+2}" y="{200-h}" width="{bw-4}" height="{h}" fill="rgba(180,180,180,0.5)" rx="2"/>'
     for i,v in enumerate(a_hist):
         h = max(v/mx_h*180,0)
-        hist_anom += f'<rect x="{i*bw+2}" y="{200-h}" width="{bw-4}" height="{h}" fill="rgba(220,38,38,0.6)" rx="2"/>'
+        hist_anom += f'<rect x="{i*bw+2}" y="{200-h}" width="{bw-4}" height="{h}" fill="rgba(239,68,68,0.7)" rx="2"/>'
 
 html = f"""<!DOCTYPE html>
 <html><head>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}}
-body{{background:#F0F2F5;padding:24px}}
-.card{{background:#fff;border:1px solid #D1D5DB;border-radius:4px;padding:20px 24px;margin-bottom:16px}}
-.card-title{{font-family:'Space Grotesk';font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#404848;margin-bottom:16px}}
-.badge{{padding:2px 8px;border-radius:2px;font-size:10px;font-weight:700;display:inline-block}}
+body{{background:transparent; padding: 24px; color: #1E293B;}}
+.card{{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:24px;margin-bottom:24px;box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);}}
+.section-title{{font-family:'Space Grotesk';font-size:16px;font-weight:700;color:#0F172A;margin-bottom:20px;display:flex;align-items:center;gap:8px;}}
+.alert-banner {{
+    background: linear-gradient(90deg, #7F1D1D 0%, #B91C1C 100%);
+    border-radius: 12px;
+    padding: 20px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(185, 28, 28, 0.2);
+}}
 table{{width:100%;border-collapse:collapse}}
-th{{text-align:left;font-family:'Space Grotesk';font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#707978;padding:10px 16px;border-bottom:2px solid #D1D5DB}}
+th{{text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;padding:16px;border-bottom:2px solid #F1F5F9}}
 </style></head><body>
 
 <!-- Alert Banner -->
-<div style="background:linear-gradient(90deg,#FEE2E2,#FECACA);border:1px solid #FECACA;border-radius:4px;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">⚠️</span><span style="color:#991B1B;font-size:16px;font-weight:800">{ac:,} ANOMALOUS ENTRIES DETECTED</span></div>
-    <div style="display:flex;gap:8px">
-        <button style="background:#DC2626;color:#fff;padding:8px 20px;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">QUARANTINE ALL</button>
-        <button style="background:#fff;color:#DC2626;border:2px solid #DC2626;padding:8px 20px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">EXPORT CSV</button>
+<div class="alert-banner">
+    <div style="display:flex;align-items:center;gap:16px">
+        <span class="material-icons" style="font-size:32px;">report_problem</span>
+        <div>
+            <div style="font-size:18px;font-weight:800;letter-spacing:-0.01em;">{ac:,} Critical Anomalies Detected</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:500;">Immediate review of security logs suggested by AI Engine</div>
+        </div>
+    </div>
+    <div style="display:flex;gap:12px">
+        <button style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);padding:10px 24px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">QUARANTINE</button>
+        <button style="background:#fff;color:#B91C1C;border:none;padding:10px 24px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;box-shadow: 0 4px 6px rgba(0,0,0,0.1);">EXPORT DATA</button>
     </div>
 </div>
 
-<!-- Row: Histogram + Right Cards -->
-<div style="display:flex;gap:16px;margin-bottom:16px">
+<div style="display:flex;gap:24px;margin-bottom:24px">
     <div class="card" style="flex:3">
-        <div class="card-title">Anomaly Distribution Score</div>
-        <div style="color:#9CA3AF;font-size:11px;margin-bottom:12px">Isolation Forest Model v4.2 Analysis</div>
-        <div style="display:flex;gap:16px;margin-bottom:8px">
-            <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:rgba(180,180,180,.5);border-radius:2px"></div><span style="font-size:11px;color:#555">Normal</span></div>
-            <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:rgba(220,38,38,.6);border-radius:2px"></div><span style="font-size:11px;color:#555">Anomalous</span></div>
+        <div class="section-title"><span class="material-icons" style="color: #EF4444;">insights</span> AI Threat Distribution</div>
+        <div style="display:flex;gap:16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#E2E8F0;border-radius:3px"></div><span style="font-size:11px;color:#64748B;font-weight:600">Baseline</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:#EF4444;border-radius:3px"></div><span style="font-size:11px;color:#EF4444;font-weight:700">Anomalous</span></div>
         </div>
         <svg width="100%" viewBox="0 0 620 240" style="overflow:visible">
             {hist_normal}{hist_anom}
-            <line x1="310" y1="0" x2="310" y2="200" stroke="#0D4F4F" stroke-width="2" stroke-dasharray="6,4"/>
-            <rect x="270" y="2" width="100" height="18" rx="3" fill="#0D4F4F"/>
-            <text x="320" y="14" fill="#fff" font-size="9" text-anchor="middle" font-weight="600">THRESHOLD 0.72</text>
-            <text x="10" y="220" fill="#888" font-size="10">0.0 (Normal)</text>
-            <text x="280" y="220" fill="#888" font-size="10">0.5 (Neutral)</text>
-            <text x="560" y="220" fill="#888" font-size="10">1.0 (Critical)</text>
-            <text x="-5" y="15" fill="#888" font-size="9">Count</text>
+            <line x1="310" y1="0" x2="310" y2="200" stroke="#0F172A" stroke-width="2" stroke-dasharray="6,4"/>
+            <rect x="260" y="0" width="100" height="20" rx="6" fill="#0F172A"/>
+            <text x="310" y="13" fill="#fff" font-size="9" text-anchor="middle" font-weight="700">AI THRESHOLD</text>
         </svg>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:16px">
+    <div style="flex:1;display:flex;flex-direction:column;gap:24px">
         <div class="card">
-            <div class="card-title">Model Reliability</div>
-            <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:#555">Precision</span><span style="font-size:12px;font-weight:800;color:#0D4F4F">98.4%</span></div><div style="background:#eee;height:10px;border-radius:2px;overflow:hidden"><div style="width:98.4%;background:#0D4F4F;height:10px;border-radius:2px"></div></div></div>
-            <div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:#555">Recall</span><span style="font-size:12px;font-weight:800;color:#0D4F4F">92.1%</span></div><div style="background:#eee;height:10px;border-radius:2px;overflow:hidden"><div style="width:92.1%;background:#0891B2;height:10px;border-radius:2px"></div></div></div>
+            <div class="section-title" style="margin-bottom: 12px;"><span class="material-icons" style="color: #10B981; font-size: 18px;">verified</span> Engine Reliability</div>
+            <div style="margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:#64748B;font-weight:500">Precision</span><span style="font-size:12px;font-weight:800;color:#0F172A">98.4%</span></div>
+                <div style="background:#F1F5F9;height:8px;border-radius:100px;overflow:hidden"><div style="width:98.4%;background:#10B981;height:8px;border-radius:100px"></div></div>
+            </div>
+            <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;color:#64748B;font-weight:500">Model Recall</span><span style="font-size:12px;font-weight:800;color:#0F172A">92.1%</span></div>
+                <div style="background:#F1F5F9;height:8px;border-radius:100px;overflow:hidden"><div style="width:92.1%;background:#6366F1;height:8px;border-radius:100px"></div></div>
+            </div>
         </div>
-        <div style="background:linear-gradient(135deg,#0D4F4F,#0D6B6B);border-radius:4px;padding:20px;flex:1">
-            <div style="font-family:'Space Grotesk';color:#80CBC4;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">System Health</div>
-            <div style="color:#fff;font-size:36px;font-weight:900;margin:8px 0">Stable</div>
-            <div style="color:#B2DFDB;font-size:12px;line-height:1.4">No critical path interruptions within detected anomalies.</div>
+        <div style="background:#0F172A;border-radius:16px;padding:24px;color:white;flex:1;position:relative;overflow:hidden;">
+            <div class="material-icons" style="position:absolute;right:-10px;bottom:-10px;font-size:100px;color:rgba(255,255,255,0.05);">security</div>
+            <div style="font-size:11px;color:#10B981;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">System Integrity</div>
+            <div style="font-size:32px;font-weight:800;margin:8px 0;">Stable</div>
+            <div style="font-size:12px;color:#94A3B8;line-height:1.5;">Anomaly patterns indicate non-disruptive background noise.</div>
         </div>
     </div>
 </div>
 
 <!-- Anomaly Table -->
 <div class="card" style="padding:0;overflow:hidden">
-    <div style="padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #D1D5DB">
-        <span class="card-title" style="margin-bottom:0">Recent Log Analysis</span>
-        <span class="badge" style="background:#FEE2E2;color:#DC2626">● Anomalous Only ✕</span>
+    <div style="padding:20px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F1F5F9">
+        <div class="section-title" style="margin-bottom:0;"><span class="material-icons" style="color: #6366F1;">list_alt</span> Detailed Analysis</div>
+        <span style="background:#FEF2F2;color:#EF4444;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid #FEE2E2;">ANOMALIES ONLY</span>
     </div>
     <table>
-        <thead><tr><th>Raw Log</th><th>Template</th><th>Anomaly Score</th><th style="text-align:center">Log Level</th></tr></thead>
+        <thead><tr><th>Raw Log Snippet</th><th>Detected Template</th><th>AI Score</th><th style="text-align:center">Level</th></tr></thead>
         <tbody>{rows_html}</tbody>
     </table>
-    <div style="display:flex;justify-content:space-between;padding:12px 16px;background:#F9FAFB;border-top:1px solid #D1D5DB">
-        <span style="font-size:11px;color:#888">Showing 1–{min(8,ac)} of {ac:,} entries</span>
-        <div style="display:flex;gap:4px"><span style="background:#0D4F4F;color:#fff;padding:2px 8px;border-radius:2px;font-size:11px;font-weight:600">1</span><span style="padding:2px 8px;font-size:11px;color:#888">2</span><span style="padding:2px 8px;font-size:11px;color:#888">3</span><span style="padding:2px 8px;font-size:11px;color:#888">…</span><span style="padding:2px 8px;font-size:11px;color:#888">Next</span></div>
+    <div style="padding:16px 24px;background:#F8FAFC;border-top:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:#64748B;font-weight:500">Showing top results for high-priority incidents</span>
+        <div style="display:flex;gap:8px"><span style="background:#0F172A;color:#fff;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">1</span><span style="color:#64748B;padding:4px 12px;font-size:11px;font-weight:600;">2</span><span style="color:#64748B;padding:4px 12px;font-size:11px;font-weight:600;">3</span></div>
     </div>
 </div>
-
-
 
 </body></html>"""
 
