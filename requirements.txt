@@ -1,0 +1,11 @@
+drain3==0.9.11
+datasketch==1.6.5
+scikit-learn==1.4.2
+pyarrow==16.0.0
+pandas==2.2.2
+streamlit==1.35.0
+plotly==5.22.0
+psutil==5.9.8
+memory-profiler==0.61.0
+pytest==8.2.0
+numpy==1.26.4
